@@ -1,0 +1,4 @@
+# mitochondrial variant
+# m.11777C>A -- https://www.ncbi.nlm.nih.gov/clinvar/variation/9711/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00102-N1-DNA1-WES1
+MT	11777	mitochondrial-1	C	A	100.0	.	.	GT:AD:DP:GQ:PL	1/1:0,51:51:99:1951,153,0

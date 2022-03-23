@@ -1,0 +1,21 @@
+# compound recessive variant
+# NM_018082.6(POLR3B):c.303+1G>A -- https://www.ncbi.nlm.nih.gov/clinvar/variation/1184092/
+# NM_018082.6(POLR3B):c.308G>A (p.Arg103His) -- https://www.ncbi.nlm.nih.gov/clinvar/variation/1184079/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA12878-N1-DNA1-WES1	NA12891-N1-DNA1-WES1	NA12892-N1-DNA1-WES1
+12	106763129	compound-recessive-1	G	A	100.0	.	.	GT:AD:DP:GQ:PL	0/1:0,51:51:99:1951,153,0	0/1:0,51:51:99:1951,153,0	0/0:10,0:10:3:0,3,55
+12	106763365	compound-recessive-2	G	A	100.0	.	.	GT:AD:DP:GQ:PL	0/1:0,51:51:99:1951,153,0	0/0:10,0:10:3:0,3,55	0/1:0,51:51:99:1951,153,0
+
+# homozygous recessive variant
+# NM_000860.6(HPGD):c.325-1G>C -- https://www.ncbi.nlm.nih.gov/clinvar/variation/1323063/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA12878-N1-DNA1-WES1	NA12891-N1-DNA1-WES1	NA12892-N1-DNA1-WES1
+4	175429944	homozygous-recessive-1	C	G	100.0	.	.	GT:AD:DP:GQ:PL	1/1:0,25:25:75:1125,75,0	0/1:0,51:51:99:1951,153,0	0/1:0,51:51:99:1951,153,0	
+
+# dominant inherited
+# NM_001287.6(CLCN7):c.952T>C (p.Phe318Leu) -- https://www.ncbi.nlm.nih.gov/clinvar/variation/1012215/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA12878-N1-DNA1-WES1	NA12891-N1-DNA1-WES1	NA12892-N1-DNA1-WES1
+16	1505761	dominant-1	A	G	100.0	.	.	GT:AD:DP:GQ:PL	0/1:0,51:51:99:1951,153,0	0/0:10,0:10:3:0,3,55	0/0:10,0:10:3:0,3,55
+
+# de novo variant
+# NM_004859.4(CLTC):c.3140T>C (p.Leu1047Pro) -- https://www.ncbi.nlm.nih.gov/clinvar/variation/488419/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00107-N1-DNA1-WES1
+17	57758730	de-novo-1	T	C	100.0	.	.	GT:AD:DP:GQ:PL	0/1:0,51:51:99:1951,153,0	0/0:10,0:10:3:0,3,55	0/0:10,0:10:3:0,3,55

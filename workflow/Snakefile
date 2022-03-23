@@ -4,6 +4,42 @@ from snakemake.utils import min_version
 min_version("7.3.0")
 
 
+#: Name of the test data file.
+FILE_TEST_DATA = "varfish-test-data-v0.24.0-20211125.tar.gz"
+#: Base download URL.
+DOWNLOAD_URL = (
+    f"https://file-public.cubi.bihealth.org/transient/varfish/{FILE_TEST_DATA}"
+)
+#: Spike-ins
+
+
 rule default:
     input:
         [],
+
+
+rule download_test_data:
+    output:
+        tar="test-data-download/{FILE_TEST_DATA}",
+        checksum="test-data-download/{FILE_TEST_DATA}.sha256",
+    params:
+        download_url=DOWNLOAD_URL,
+    shell:
+        r"""
+        wget -O {output.tar} {params.download_url}
+        wget -O {output.checksum} {params.download_url}.sha256
+        cd $(dirname {output.tar})
+        sha256sum --check $(basename {output.checksum})
+        """
+
+
+rule extract_test_data:
+    input:
+        tar=f"test-data-download/{FILE_TEST_DATA}",
+    output:
+        done=touch("test-data/.done"),
+    shell:
+        r"""
+        tar -vC $(dirname {output.done}) -xf {input.tar}
+        """
+

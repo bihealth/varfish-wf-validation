@@ -1,0 +1,4 @@
+# dominant variant
+# NM_001287.6(CLCN7):c.952T>C (p.Phe318Leu) -- https://www.ncbi.nlm.nih.gov/clinvar/variation/1012215/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00107-N1-DNA1-WES1
+16	1505761	dominant-1	A	G	100.0	.	.	GT:AD:DP:GQ:PL	0/1:0,51:51:99:1951,153,0

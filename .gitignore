@@ -8,6 +8,16 @@
 !workflow/rules/annotation/*
 !workflow/resources/*
 !config/*.example
+!data/GRCh37/HG00102.txt
+!data/GRCh37/HG00107.txt
+!data/GRCh37/HG00119.txt
+!data/GRCh37/HG00121.txt
+!data/GRCh37/NA12878.txt
+!data/GRCh38/HG00102.txt
+!data/GRCh38/HG00107.txt
+!data/GRCh38/HG00119.txt
+!data/GRCh38/HG00121.txt
+!data/GRCh38/NA12878.txt
 !LICENSE
 !README.md
 !CHANGELOG.md

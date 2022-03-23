@@ -1,0 +1,4 @@
+# homozygous recessive variant
+# NM_014305.4(TGDS):c.700T>C (p.Tyr234His) -- https://www.ncbi.nlm.nih.gov/clinvar/variation/162456/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00107-N1-DNA1-WES1
+13	95230384	homozygous-recessive-1	A	G	100.0	.	.	GT:AD:DP:GQ:PL	1/1:0,25:25:75:1090,75,0

@@ -1,0 +1,6 @@
+# compound recessive heterozygous variant
+# NM_014305.4(TGDS):c.892A>G (p.Asn298Asp) -- https://www.ncbi.nlm.nih.gov/clinvar/variation/162460/
+# NM_014305.4(TGDS):c.294T>G (p.Phe98Leu) -- https://www.ncbi.nlm.nih.gov/clinvar/variation/162458/
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00107-N1-DNA1-WES1
+13	95228658	compound-recessive-1	T	C	100.0	.	.	GT:AD:DP:GQ:PL	0/1:0,51:51:99:1951,153,0
+13	95243126	compound-recessive-2	A	C	100.0	.	.	GT:AD:DP:GQ:PL	0/1:0,51:51:99:1951,153,0
