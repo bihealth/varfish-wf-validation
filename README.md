@@ -12,25 +12,28 @@ $ mamba env create -n varfish-wf-validation --file environment.yaml
 $ conda activte varfish-wf-validation
 ```
 
-
 ## Configuring
 
-First of all, ensure that `~/.varfishrc.toml` is properly configured, e.g.
+Copy `config/main.yml.example` to `config/main.yml` and adjust paths.
 
-```toml
-[global]
-varfish_server_url = "https://varfish.example.com"
-varfish_api_token = "1234567890123456789012345678901234567890123456789012345678901234"
-```
+You will need a number of files for that.
 
-Then, copy `config/main.yml.example` to `config/main.yml`.
-Adjust the settings:
-
-TODO
+TODO: document how to properly setup
 
 ## Running
 
+First, kickoff the import.
+
 ```
-# snakemake --configfile=config/main.yml --cores 10 -d workflow
+# cd workflow
+workflow # snakemake --cores=10 -p import-started/GRCh37/.done
 ```
 
+Then, wait until all import jobs have completed.
+Future versions will allow you to wait automatically.
+
+Then, kickoff the querying and validation.
+
+```
+workflow # snakemake --cores=10 -p validation/GRCh37/.done
+```

@@ -1,8 +1,43 @@
+import contextlib
+import json
+import tempfile
+
 from snakemake.utils import min_version
 
 
 min_version("7.3.0")
 
+
+configfile: "../config/main.yml"
+
+
+#: Header when writing out TSV.
+HEADER = (
+    "RELEASE",
+    "CHROM",
+    "POS",
+    "REF",
+    "ALT",
+    "EFFECT",
+    # "GENE_SYMBOL",
+    "GENE_ENTREZID",
+    "TRANSCRIPT",
+    "SAMPLE1",
+    "SAMPLE1_GT",
+    "SAMPLE1_ALT_COV",
+    "SAMPLE1_TOTAL_COV",
+    "SAMPLE1_GT_QUAL",
+    "SAMPLE2",
+    "SAMPLE2_GT",
+    "SAMPLE2_ALT_COV",
+    "SAMPLE2_TOTAL_COV",
+    "SAMPLE2_GT_QUAL",
+    "SAMPLE3",
+    "SAMPLE3_GT",
+    "SAMPLE3_ALT_COV",
+    "SAMPLE3_TOTAL_COV",
+    "SAMPLE3_GT_QUAL",
+)
 
 #: Name of the test data file.
 FILE_TEST_DATA = "varfish-test-data-v0.24.0-20211125.tar.gz"
@@ -10,12 +45,26 @@ FILE_TEST_DATA = "varfish-test-data-v0.24.0-20211125.tar.gz"
 DOWNLOAD_URL = (
     f"https://file-public.cubi.bihealth.org/transient/varfish/{FILE_TEST_DATA}"
 )
+#: Input base cases
+INPUT_CASES = {entry["name"]: entry for entry in config["input_cases"]}
 #: Spike-ins
+TEST_CASES = {entry["name"]: entry for entry in config["test_cases"]}
+#: FORMAT fields
+GT_FIELDS = ("GT", "AD", "DP", "GQ", "PL")
+#: FORMAT values by genotype
+FORMAT_VALUES = {
+    "0/0": {"GT": "0/0", "AD": "11,0", "DP": 11, "GQ": 33, "PL": "0,33,431"},
+    "0/1": {"GT": "0/1", "AD": "9,15", "DP": 24, "GQ": 99, "PL": "636,0,401"},
+    "1/1": {"GT": "1/1", "AD": "0,51", "DP": 51, "GQ": 99, "PL": "1951,153,0"},
+}
 
 
 rule default:
     input:
-        [],
+        expand(
+            "import-started/{release}/.done",
+            release=config["releases"],
+        ),
 
 
 rule download_test_data:
@@ -43,3 +92,497 @@ rule extract_test_data:
         tar -vC $(dirname {output.done}) -xf {input.tar}
         """
 
+
+rule generate_spike_in_files:
+    input:
+        test_data="test-data/.done",
+    output:
+        ped="spike-ins/{release}/{name}/family.ped",
+        rows="spike-ins/{release}/{name}/spike_in_rows.txt",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        test_case = TEST_CASES[wildcards.name]
+        input_case = INPUT_CASES[test_case["input_case"]]
+        mapped_names = [
+            test_case["map"][member["name"]] for member in input_case["pedigree"]
+        ]
+
+        rows = []
+        for spike_in in test_case["spike_ins"]:
+            genotypes = {name: spike_in["genotypes"][name] for name in mapped_names}
+            variant = spike_in[wildcards.release]
+            row = [
+                variant["chrom"],
+                variant["pos"],
+                "-".join(
+                    map(
+                        str,
+                        (
+                            "SPIKEIN",
+                            variant["chrom"],
+                            variant["pos"],
+                            variant["ref"],
+                            variant["alt"],
+                        ),
+                    )
+                ),
+                variant["ref"],
+                variant["alt"],
+                100.0,
+                ".",
+                ".",
+                ":".join(GT_FIELDS),
+            ]
+            for name in mapped_names:
+                values = FORMAT_VALUES[genotypes[name]]
+                row.append(":".join(map(str, (values[field] for field in GT_FIELDS))))
+            rows.append(row)
+
+        with open(output.rows, "wt") as outputf:
+            for row in rows:
+                print("\t".join(map(str, row)), file=outputf)
+
+        with open(output.ped, "wt") as outputf:
+            for member in input_case["pedigree"]:
+                row = [
+                    wildcards.name,
+                    test_case["map"][member["name"]],
+                    test_case["map"].get(member.get("father", "0"), "0"),
+                    test_case["map"].get(member.get("mother", "0"), "0"),
+                    {"unknown": 0, "male": 1, "female": 2}[member["sex"]],
+                    2
+                    if test_case["affected"].get(test_case["map"][member["name"]])
+                    else 1,
+                ]
+                print("\t".join(map(str, row)), file=outputf)
+
+
+def input_spike_into_vcf(wildcards):
+    input_case = INPUT_CASES[TEST_CASES[wildcards.name]["input_case"]]
+    name = input_case["name"]
+    filename = f"bwa.gatk_hc.{name}.vcf.gz"
+    return {}
+
+
+rule spike_into_vcf:
+    input:
+        testdata="test-data/.done",
+        ped="spike-ins/{release}/{name}/family.ped",
+        row="spike-ins/{release}/{name}/spike_in_rows.txt",
+    output:
+        ped="manipulated-case/{release}/{name}/family.ped",
+        vcf="manipulated-case/{release}/{name}/family.vcf.gz",
+        tbi="manipulated-case/{release}/{name}/family.vcf.gz.tbi",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        input_case = INPUT_CASES[TEST_CASES[wildcards.name]["input_case"]]
+        name = input_case["name"]
+        filename = f"bwa.gatk_hc.{name}.vcf.gz"
+        dirname = FILE_TEST_DATA[: -len(".tar.gz")]
+        input_vcf = f"test-data/{dirname}/{wildcards.release}/vcf/{name}/{filename}"
+
+        test_case = TEST_CASES[wildcards.name]
+        input_case = INPUT_CASES[test_case["input_case"]]
+        mapped_names = [
+            test_case["map"][member["name"]] for member in input_case["pedigree"]
+        ]
+        NAMES = ";".join(mapped_names)
+
+        shell(
+            r"""
+        export TMPDIR=$(mktemp -d)
+        trap "rm -rf $TMPDIR" EXIT
+
+        cp {input.ped} {output.ped}
+
+        echo {NAMES} | tr ';' '\n' > $TMPDIR/samples.txt
+
+        vcf={output.vcf}
+        zcat --force {input_vcf} {input.row} > ${{vcf%.gz}}
+        bcftools reheader \
+            --samples $TMPDIR/samples.txt \
+            ${{vcf%.gz}} \
+        | bcftools sort /dev/stdin \
+            -T $TMPDIR/bcftools.XXXXXX \
+            -O z \
+            -o {output.vcf}
+
+        tabix -f {output.vcf}
+        """
+        )
+
+
+rule run_varfish_annotator:
+    input:
+        ped="manipulated-case/{release}/{name}/family.ped",
+        vcf="manipulated-case/{release}/{name}/family.vcf.gz",
+    output:
+        ped="for-import/{release}/{name}/family.ped",
+        ped_md5="for-import/{release}/{name}/family.ped.md5",
+        db_info="for-import/{release}/{name}/family.db-info.tsv.gz",
+        db_info_md5="for-import/{release}/{name}/family.db-info.tsv.gz.md5",
+        gts="for-import/{release}/{name}/family.gts.tsv.gz",
+        gts_md5="for-import/{release}/{name}/family.gts.tsv.gz.md5",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        path_ref = config["paths"][wildcards.release]["reference"]
+        path_annotator_db = config["paths"][wildcards.release]["annotator_db"]
+        path_refseq_ser = config["paths"][wildcards.release]["refseq_ser"]
+        path_ensembl_ser = config["paths"][wildcards.release]["ensembl_ser"]
+        shell(
+            r"""
+        gts={output.gts}
+        gts=${{gts%.gz}}
+        dbs={output.db_info}
+        dbs=${{dbs%.gz}}
+
+        varfish-annotator \
+            annotate \
+            -XX:MaxHeapSize=10g \
+            -XX:+UseConcMarkSweepGC \
+            --release {wildcards.release} \
+            \
+            --ref-path {path_ref} \
+            --db-path {path_annotator_db} \
+            --refseq-ser-path {path_refseq_ser} \
+            --ensembl-ser-path {path_ensembl_ser} \
+            \
+            --input-vcf {input.vcf} \
+            --output-db-info $dbs \
+            --output-gts $gts
+
+        gzip $dbs
+        gzip $gts
+        cp {input.ped} {output.ped}
+
+        pushd $(dirname $gts)
+        md5sum $(basename $dbs).gz >$(basename $dbs).gz.md5
+        md5sum $(basename $gts).gz >$(basename $gts).gz.md5
+        md5sum $(basename {output.ped}) >$(basename {output.ped}).md5
+        """
+        )
+
+
+@contextlib.contextmanager
+def tmp_with_varfishrc(wildcards):
+    server_url = config["varfish_config"][wildcards.release]["server_url"]
+    api_token = config["varfish_config"][wildcards.release]["api_token"]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with open(f"{tmpdir}/varfishrc.toml", "wt") as outputf:
+            print("[global]", file=outputf)
+            print(f'varfish_server_url = "{server_url}"', file=outputf)
+            print(f'varfish_api_token = "{api_token}"', file=outputf)
+        yield tmpdir
+
+
+rule upload_to_varfish:
+    input:
+        ped="for-import/{release}/{name}/family.ped",
+        db_info="for-import/{release}/{name}/family.db-info.tsv.gz",
+        gts="for-import/{release}/{name}/family.gts.tsv.gz",
+    output:
+        done=touch("import-started/{release}/{name}/.done"),
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        project_uuid = config["varfish_config"][wildcards.release]["project_uuid"]
+
+        with tmp_with_varfishrc(wildcards) as tmpdir:
+            shell(
+                r"""
+        varfish-cli \
+            --config={tmpdir}/varfishrc.toml \
+            --no-verify-ssl \
+            case \
+            create-import-info \
+            --force-fresh \
+            --resubmit \
+            {project_uuid} \
+            {input.ped} \
+            {input.db_info} \
+            {input.gts}
+        """
+            )
+
+
+rule all_uploaded:
+    input:
+        expand(
+            "import-started/{{release}}/{name}/.done",
+            name=TEST_CASES,
+        ),
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    output:
+        done=touch("import-started/{release}/.done"),
+
+
+rule list_cases:
+    input:
+        "import-started/{release}/.done",
+    output:
+        case_list="validation/{release}/case_list.json",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        project_uuid = config["varfish_config"][wildcards.release]["project_uuid"]
+
+        with tmp_with_varfishrc(wildcards) as tmpdir:
+            shell(
+                r"""
+        varfish-cli \
+            --config={tmpdir}/varfishrc.toml \
+            --no-verify-ssl \
+            case \
+            --output-format=json \
+            list {project_uuid} \
+        | jq \
+        > validation/{wildcards.release}/case_list.json
+        """
+            )
+
+
+def load_case_uuid(path_case_list, case_name):
+    with open(path_case_list) as inputf:
+        for case in json.load(inputf):
+            if case["name"] == case_name:
+                return case["sodar_uuid"]  # early exit!
+    raise RuntimeError(f"Could not resolve {case[name]} to UUID!")
+
+
+rule create_query_params:
+    input:
+        case_list="validation/{release}/case_list.json",
+    output:
+        query_params="validation/{release}/{name}/query_params.json",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        test_case = TEST_CASES[wildcards.name]
+        case_uuid = load_case_uuid(input.case_list, wildcards.name)
+
+        with tmp_with_varfishrc(wildcards) as tmpdir:
+            shell(
+                r"""
+        varfish-cli \
+            --config={tmpdir}/varfishrc.toml \
+            --no-verify-ssl \
+            case \
+            --output-format=json \
+            small-var-query-shortcut \
+            {case_uuid} \
+            {test_case[query][presets]} \
+        > {output}.tmp
+
+        sed -i -e 's/five_/5_/' -e 's/three_/3_/' {output}.tmp
+        mv {output}.tmp {output}
+        """
+            )
+
+
+rule run_query:
+    input:
+        case_list="validation/{release}/case_list.json",
+        query_params="validation/{release}/{name}/query_params.json",
+    output:
+        query="validation/{release}/{name}/query.json",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        case_uuid = load_case_uuid(input.case_list, wildcards.name)
+
+        with tmp_with_varfishrc(wildcards) as tmpdir:
+            shell(
+                r"""
+        varfish-cli \
+            --config={tmpdir}/varfishrc.toml \
+            --no-verify-ssl \
+            case \
+            --output-format=json \
+            small-var-query-create \
+            {case_uuid} \
+            @{input.query_params} \
+        > {output.query}
+        """
+            )
+
+
+rule wait_for_query:
+    input:
+        case_list="validation/{release}/case_list.json",
+        query="validation/{release}/{name}/query.json",
+    output:
+        status="validation/{release}/{name}/query_status.json",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        case_uuid = load_case_uuid(input.case_list, wildcards.name)
+
+        with tmp_with_varfishrc(wildcards) as tmpdir:
+            shell(
+                r"""
+        query_id=$(jq -r '.sodar_uuid' {input.query})
+
+        while true; do
+            varfish-cli \
+                --config=/tmp/varfishrc.toml \
+                --no-verify-ssl \
+                case \
+                --output-format=json \
+                small-var-query-status \
+                "$query_id" \
+            > {output.status}.tmp
+
+            if grep failed {output.status}.tmp >/dev/null; then
+                >&2 echo "Job failed!"
+                exit 1
+            elif grep done {output.status}.tmp >/dev/null; then
+                mv {output.status}.tmp {output.status}
+                break
+            fi
+            sleep 10s
+        done
+        """
+            )
+
+
+rule fetch_results_json:
+    input:
+        case_list="validation/{release}/case_list.json",
+        query="validation/{release}/{name}/query.json",
+        query_status="validation/{release}/{name}/query_status.json",
+    output:
+        result="validation/{release}/{name}/query_result.json",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        case_uuid = load_case_uuid(input.case_list, wildcards.name)
+
+        with tmp_with_varfishrc(wildcards) as tmpdir:
+            shell(
+                r"""
+        query_id=$(jq -r '.sodar_uuid' {input.query})
+
+        varfish-cli \
+            --config=/tmp/varfishrc.toml \
+            --no-verify-ssl \
+            case \
+            --output-format=json \
+            small-var-query-fetch-results \
+            "$query_id" \
+        > {output.result}
+        """
+            )
+
+
+def do_convert(inputf, outputf):
+    data = json.load(inputf)
+    for row in data:
+        arr = [
+            row["release"],
+            row["chromosome"],
+            row["start"],
+            row["reference"],
+            row["alternative"],
+            "|".join(row["refseq_effect"]),
+            # ENTREZ_TO_SYMBOL.get(row["refseq_gene_id"], "."),
+            row["refseq_gene_id"],
+            row["refseq_transcript_id"],
+        ]
+        for sample, gt in row["genotype"].items():
+            arr += [
+                sample.replace("-N1-DNA1-WES1", ""),
+                gt["gt"],
+                gt["ad"],
+                gt["dp"],
+                gt["gq"],
+            ]
+        arr = list(map(str, arr))
+        print("\t".join(arr), file=outputf)
+
+
+rule convert_results_tsv:
+    input:
+        json="validation/{release}/{name}/query_result.json",
+    output:
+        tsv="validation/{release}/{name}/query_result.tsv",
+    wildcard_constraints:
+        release=r"[a-zA-Z0-9]+",
+    run:
+        with open(input.json, "rt") as inputf:
+            with open(output.tsv, "wt") as outputf:
+                do_convert(inputf, outputf)
+
+
+rule check_result_json:
+    input:
+        json="validation/{release}/{name}/query_result.json",
+    output:
+        status="validation/{release}/{name}/status.txt",
+    run:
+        test_case = TEST_CASES[wildcards.name]
+        spike_ins = set()
+        for spike_in in test_case["spike_ins"]:
+            x = spike_in[wildcards.release]
+            spike_ins.add(
+                "-".join(
+                    map(
+                        str,
+                        [
+                            wildcards.release,
+                            x["chrom"],
+                            x["pos"],
+                            x["ref"],
+                            x["alt"],
+                        ],
+                    )
+                )
+            )
+
+        with open(input.json, "rt") as inputf:
+            result = json.load(inputf)
+        found = set()
+        for x in result:
+            found.add(
+                "-".join(
+                    map(
+                        str,
+                        [
+                            x["release"],
+                            x["chromosome"],
+                            x["start"],
+                            x["reference"],
+                            x["alternative"],
+                        ],
+                    )
+                )
+            )
+
+        missing = spike_ins - found
+        with open(output.status, "wt") as outputf:
+            if missing:
+                print(f"MISSING: {missing}", file=outputf)
+            else:
+                print("OK", file=outputf)
+
+
+rule all_results:
+    input:
+        statuses=expand(
+            "validation/{release}/{name}/status.txt",
+            release=config["releases"],
+            name=TEST_CASES,
+        ),
+    output:
+        result=touch("validation/{release}/all_statuses.txt"),
+    run:
+        with open(output.result, "wt") as outputf:
+            for path in sorted(input.statuses):
+                with open(path, "rt") as inputf:
+                    print(
+                        "%s: %s" % (path.split("/")[-2], inputf.read().strip()),
+                        file=outputf,
+                    )

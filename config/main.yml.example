@@ -1,10 +1,86 @@
-varfish_shortcuts:
-  query_presets: recessive
+#: Releases to run for.
+releases:
+  - GRCh37
+  # - GRCh38
 
-varfish_projects:
-  - name: my-project
-    uuid: 12345678-1234-1234-1234-123456789012
+# Configure static paths.
+paths:
+  GRCh37:
+    reference: PATH_TO/GRCh37/hs37d5.fa
+    annotator_db: PATH_TO/GRCh37/varfish-annotator-db-20210728-grch37.h2.db
+    refseq_ser: PATH_TO/GRCh37/refseq_curated_105_hg19.ser
+    ensembl_ser: PATH_TO/GRCh37/ensembl_87_hg19.ser
 
-genes: null
+# Define the upstream varfish server and project
+varfish_config:
+  GRCh37:
+    server_url: https://varfish-build-release-37.example.org
+    api_token: SOMETOKEN
+    project_uuid: SOMEUUID
+  GRCh38:
+    server_url: https://varfish-build-release-38.example.org
+    api_token: ANOTHER
+    project_uuid: ANOTHERUUID
 
-max_cases: null
+# Define the cases with a name and a pedigree.
+#
+# The information about the disease state will be set when generating the
+# spike-ins.  Missing parent information is equivalent to "0"/founder.
+input_cases:
+  - name: HG00102-N1-DNA-WES1
+    pedigree:
+      - name: HG00102-N1-DNA1-WES1
+        sex: female
+  - name: HG00107-N1-DNA-WES1
+    pedigree:
+      - name: HG00107-N1-DNA1-WES1
+        sex: male
+  - name: HG00119-N1-DNA-WES1
+    pedigree:
+      - name: HG00119-N1-DNA1-WES1
+        sex: male
+  - name: HG00121-N1-DNA-WES1
+    pedigree:
+      - name: HG00121-N1-DNA1-WES1
+        sex: female
+  - name: HG00126-N1-DNA-WES1
+    pedigree:
+      - name: HG00121-N1-DNA1-WES1
+        sex: male
+  - name: NA12878-N1-DNA-WES1
+    pedigree:
+      - name: NA12878-N1-DNA1-WES1
+        father: NA12891-N1-DNA1-WES1
+        mother: NA12892-N1-DNA1-WES1
+        sex: female
+      - name: NA12891-N1-DNA1-WES1
+        sex: male
+      - name: NA12892-N1-DNA1-WES1
+        sex: female
+
+# Define the test cases to generate and use.
+test_cases:
+  # Spike-in a known Clinvar pathogenic mitochondrial variant into a singleton.
+  #
+  # VarFish should be run with "mitochondrial" presets to locate the variant.
+  - name: case-chrmt-singleton
+    base_case: HG00102-N1-DNA-WES1
+    map:
+      family: fam-single-chrmt
+      HG00102-N1-DNA-WES1: index-chrmt
+    query:
+      presets: mitochondrial
+    spike-ins:
+      # A mitochondrial variant from ClinVar, submitted for "Leber optic atrophy".
+      - label: "m.11777C>A"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/9711/
+        grch37:
+          chrom: MT
+          pos: 11777
+          ref: C
+          alt: A
+        grch38:
+          chrom: MT
+          pos: 11777
+          ref: C
+          alt: A
