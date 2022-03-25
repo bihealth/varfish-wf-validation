@@ -22,65 +22,280 @@ varfish_config:
     api_token: ANOTHER
     project_uuid: ANOTHERUUID
 
-# Define the cases with a name and a pedigree.
-#
-# The information about the disease state will be set when generating the
-# spike-ins.  Missing parent information is equivalent to "0"/founder.
-input_cases:
-  - name: HG00102-N1-DNA-WES1
-    pedigree:
-      - name: HG00102-N1-DNA1-WES1
-        sex: female
-  - name: HG00107-N1-DNA-WES1
-    pedigree:
-      - name: HG00107-N1-DNA1-WES1
-        sex: male
-  - name: HG00119-N1-DNA-WES1
-    pedigree:
-      - name: HG00119-N1-DNA1-WES1
-        sex: male
-  - name: HG00121-N1-DNA-WES1
-    pedigree:
-      - name: HG00121-N1-DNA1-WES1
-        sex: female
-  - name: HG00126-N1-DNA-WES1
-    pedigree:
-      - name: HG00121-N1-DNA1-WES1
-        sex: male
-  - name: NA12878-N1-DNA-WES1
-    pedigree:
-      - name: NA12878-N1-DNA1-WES1
-        father: NA12891-N1-DNA1-WES1
-        mother: NA12892-N1-DNA1-WES1
-        sex: female
-      - name: NA12891-N1-DNA1-WES1
-        sex: male
-      - name: NA12892-N1-DNA1-WES1
-        sex: female
-
 # Define the test cases to generate and use.
 test_cases:
   # Spike-in a known Clinvar pathogenic mitochondrial variant into a singleton.
   #
   # VarFish should be run with "mitochondrial" presets to locate the variant.
-  - name: case-chrmt-singleton
-    base_case: HG00102-N1-DNA-WES1
+  - name: chrmt_singleton
+    input_case: HG00102-N1-DNA1-WES1
     map:
-      family: fam-single-chrmt
-      HG00102-N1-DNA-WES1: index-chrmt
+      family: fam_single_chrmt
+      HG00102-N1-DNA1-WES1: index_chrmt
+    affected:
+      index_chrmt: true
     query:
       presets: mitochondrial
-    spike-ins:
+    spike_ins:
       # A mitochondrial variant from ClinVar, submitted for "Leber optic atrophy".
       - label: "m.11777C>A"
         url: https://www.ncbi.nlm.nih.gov/clinvar/variation/9711/
-        grch37:
+        genotypes:
+          index_chrmt: "1/1"
+        GRCh37:
           chrom: MT
           pos: 11777
           ref: C
           alt: A
-        grch38:
+        GRCh38:
           chrom: MT
           pos: 11777
           ref: C
           alt: A
+  # Spike-in two known Clinvar variant into a singleton as compound recessive.
+  #
+  # VarFish should be run with "recessive" presets to locate the variant.
+  - name: comphet_singleton
+    input_case: HG00107-N1-DNA1-WES1
+    map:
+      family: fam_single_comphet
+      HG00107-N1-DNA1-WES1: index_comphet
+    affected:
+      index_comphet: true
+    query:
+      presets: recessive
+    spike_ins:
+      # Two recessive variant from ClinVar, submitted for "Catel-Manzke Syndrome".
+      - label: "NM_014305.4(TGDS):c.892A>G (p.Asn298Asp)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/162460/
+        genotypes:
+          index_comphet: "0/1"
+        GRCh37:
+          chrom: "13"
+          pos: 95228658
+          ref: T
+          alt: C
+        GRCh38:
+          chrom: "13"
+          pos: 94576404
+          ref: T
+          alt: C
+      - label: "NM_014305.4(TGDS):c.294T>G (p.Phe98Leu)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/162458/
+        genotypes:
+          index_comphet: "0/1"
+        GRCh37:
+          chrom: "13"
+          pos: 95243126
+          ref: A
+          alt: C
+        GRCh38:
+          chrom: "13"
+          pos: 94590872
+          ref: A
+          alt: C
+  # Spike-in a known Clinvar variant into a singleton as homozygous recessive.
+  #
+  # VarFish should be run with "recessive" presets to locate the variant.
+  - name: hom_singleton
+    input_case: HG00119-N1-DNA1-WES1
+    map:
+      family: fam_single_hom
+      HG00119-N1-DNA1-WES1: index_hom
+    affected:
+      index_hom: true
+    query:
+      presets: recessive
+    spike_ins:
+      # One recessive variant from ClinVar, submitted for "Catel-Manzke Syndrome".
+      - label: "NM_014305.4(TGDS):c.700T>C (p.Tyr234His)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/162456/
+        genotypes:
+          index_hom: "1/1"
+        GRCh37:
+          chrom: "13"
+          pos: 95230384
+          ref: A
+          alt: G
+        GRCh38:
+          chrom: "13"
+          pos: 94578130
+          ref: A
+          alt: G
+  # Spike-in a known Clinvar variant into a singleton as heterozygous dominant.
+  #
+  # VarFish should be run with "dominant" presets to locate the variant.
+  - name: het_singleton
+    input_case: HG00121-N1-DNA1-WES1
+    map:
+      family: fam_single_het
+      HG00121-N1-DNA1-WES1: index_het
+    affected:
+      index_het: true
+    query:
+      presets: dominant
+    spike_ins:
+      # One dominant  from ClinVar, submitted for "Autosomal dominant osteopetrosis 2"
+      - label: "NM_001287.6(CLCN7):c.952T>C (p.Phe318Leu)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1012215/
+        genotypes:
+          index_het: "0/1"
+        GRCh37:
+          chrom: "16"
+          pos: 1505761
+          ref: A
+          alt: G
+        GRCh38:
+          chrom: "16"
+          pos: 1455760
+          ref: A
+          alt: G
+  # Spike-in known Clinvar variants into a trio as comp. het. recessive variant.
+  #
+  # VarFish should be run with "recessive" presets to locate the variant.
+  - name: comphet_trio
+    input_case: NA12878-N1-DNA1-WES1
+    map:
+      family: fam_trio_comphet
+      NA12878-N1-DNA1-WES1: index_comphet
+      NA12891-N1-DNA1-WES1: father_comphet
+      NA12892-N1-DNA1-WES1: mother_comphet
+    affected:
+      index_comphet: true
+    query:
+      presets: recessive
+    spike_ins:
+      # Variants from ClinVar, submitted for "Hypomyelinating leukodystrophy 8,
+      # with or without oligodontia and/or hypogonadotropic hypogonadism"
+      - label: "NM_018082.6(POLR3B):c.303+1G>A"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1184092/
+        genotypes:
+          index_comphet: "0/1"
+          father_comphet: "0/1"
+          mother_comphet: "0/0"
+        GRCh37:
+          chrom: "12"
+          pos: 106763129
+          ref: G
+          alt: A
+        GRCh38:
+          chrom: "12"
+          pos: 106369351
+          ref: G
+          alt: A
+      - label: "NM_018082.6(POLR3B):c.308G>A (p.Arg103His)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1184079/
+        genotypes:
+          index_comphet: "0/1"
+          father_comphet: "0/0"
+          mother_comphet: "0/1"
+        GRCh37:
+          chrom: "12"
+          pos: 106763365
+          ref: G
+          alt: A
+        GRCh38:
+          chrom: "12"
+          pos: 106369587
+          ref: G
+          alt: A
+  # Spike-in a known Clinvar variant into a trio as homozygous recessive variant.
+  #
+  # VarFish should be run with "recessive" presets to locate the variant.
+  - name: hom_trio
+    input_case: NA12878-N1-DNA1-WES1
+    map:
+      family: fam_trio_hom
+      NA12878-N1-DNA1-WES1: index_hom
+      NA12891-N1-DNA1-WES1: father_hom
+      NA12892-N1-DNA1-WES1: mother_hom
+    affected:
+      index_hom: true
+    query:
+      presets: recessive
+    spike_ins:
+      # Variants from ClinVar, submitted for gene described in OMIM for "HYPERTROPHIC
+      # OSTEOARTHROPATHY, PRIMARY, AUTOSOMAL RECESSIVE, 1; PHOAR1 "
+      - label: "NM_000860.6(HPGD):c.325-1G>C"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1323063/
+        genotypes:
+          index_hom: "1/1"
+          father_hom: "0/1"
+          mother_hom: "0/1"
+        GRCh37:
+          chrom: "4"
+          pos: 175429944
+          ref: C
+          alt: G
+        GRCh38:
+          chrom: "4"
+          pos: 174508793
+          ref: C
+          alt: G
+  # Spike-in a known Clinvar variant into a trio as heterozygous dominant variant.
+  #
+  # VarFish should be run with "dominant" presets to locate the variant.
+  - name: het_trio
+    input_case: NA12878-N1-DNA1-WES1
+    map:
+      family: fam_trio_het
+      NA12878-N1-DNA1-WES1: index_het
+      NA12891-N1-DNA1-WES1: father_het
+      NA12892-N1-DNA1-WES1: mother_het
+    affected:
+      index_het: true
+      father_het: true
+    query:
+      presets: dominant
+    spike_ins:
+      # Variants from ClinVar, submitted for "Autosomal dominant osteopetrosis 2"
+      - label: "NM_001287.6(CLCN7):c.952T>C (p.Phe318Leu)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1012215/
+        genotypes:
+          index_het: "0/1"
+          father_het: "0/1"
+          mother_het: "0/0"
+        GRCh37:
+          chrom: "16"
+          pos: 1505761
+          ref: A
+          alt: G
+        GRCh38:
+          chrom: "16"
+          pos: 1455760
+          ref: A
+          alt: G
+  # Spike-in a known Clinvar variant into a trio as de novo variant.
+  #
+  # VarFish should be run with "de_novo" presets to locate the variant.
+  - name: denovo_trio
+    input_case: NA12878-N1-DNA1-WES1
+    map:
+      family: fam_trio_denovo
+      NA12878-N1-DNA1-WES1: index_denovo
+      NA12891-N1-DNA1-WES1: father_denovo
+      NA12892-N1-DNA1-WES1: mother_denovo
+    affected:
+      index_denovo: true
+      father_het: true
+    query:
+      presets: de_novo
+    spike_ins:
+      # Variants from ClinVar, submitted for " Intellectual disability,
+      # autosomal dominant 56"
+      - label: "NM_004859.4(CLTC):c.3140T>C (p.Leu1047Pro)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1012215/
+        genotypes:
+          index_denovo: "0/1"
+          father_denovo: "0/0"
+          mother_denovo: "0/0"
+        GRCh37:
+          chrom: "16"
+          pos: 1505761
+          ref: A
+          alt: G
+        GRCh38:
+          chrom: "16"
+          pos: 1455760
+          ref: A
+          alt: G

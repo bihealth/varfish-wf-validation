@@ -197,7 +197,7 @@ rule spike_into_vcf:
 
         cp {input.ped} {output.ped}
 
-        echo {NAMES} | tr ';' '\n' > $TMPDIR/samples.txt
+        echo "{NAMES}" | tr ';' '\n' > $TMPDIR/samples.txt
 
         vcf={output.vcf}
         zcat --force {input_vcf} {input.row} > ${{vcf%.gz}}
