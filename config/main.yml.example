@@ -1,7 +1,7 @@
 #: Releases to run for.
 releases:
   - GRCh37
-  # - GRCh38
+  - GRCh38
 
 # Configure static paths.
 paths:
@@ -10,6 +10,11 @@ paths:
     annotator_db: PATH_TO/GRCh37/varfish-annotator-db-20210728-grch37.h2.db
     refseq_ser: PATH_TO/GRCh37/refseq_curated_105_hg19.ser
     ensembl_ser: PATH_TO/GRCh37/ensembl_87_hg19.ser
+  GRCh38:
+    reference: PATH_TO/GRCh37/hs38.fa
+    annotator_db: PATH_TO/GRCh37/varfish-annotator-db-20210728-grch38.h2.db
+    refseq_ser: PATH_TO/GRCh37/refseq_curated_109_hg38.ser
+    ensembl_ser: PATH_TO/GRCh37/ensembl_91_hg38.ser
 
 # Define the upstream varfish server and project
 varfish_config:
@@ -21,6 +26,42 @@ varfish_config:
     server_url: https://varfish-build-release-38.example.org
     api_token: ANOTHER
     project_uuid: ANOTHERUUID
+
+# Define the cases with a name and a pedigree.
+#
+# The information about the disease state will be set when generating the
+# spike-ins.  Missing parent information is equivalent to "0"/founder.
+input_cases:
+  - name: HG00102-N1-DNA1-WES1
+    pedigree:
+      - name: HG00102-N1-DNA1-WES1
+        sex: female
+  - name: HG00107-N1-DNA1-WES1
+    pedigree:
+      - name: HG00107-N1-DNA1-WES1
+        sex: male
+  - name: HG00119-N1-DNA1-WES1
+    pedigree:
+      - name: HG00119-N1-DNA1-WES1
+        sex: male
+  - name: HG00121-N1-DNA1-WES1
+    pedigree:
+      - name: HG00121-N1-DNA1-WES1
+        sex: female
+  - name: HG00126-N1-DNA1-WES1
+    pedigree:
+      - name: HG00121-N1-DNA1-WES1
+        sex: male
+  - name: NA12878-N1-DNA1-WES1
+    pedigree:
+      - name: NA12878-N1-DNA1-WES1
+        father: NA12891-N1-DNA1-WES1
+        mother: NA12892-N1-DNA1-WES1
+        sex: female
+      - name: NA12891-N1-DNA1-WES1
+        sex: male
+      - name: NA12892-N1-DNA1-WES1
+        sex: female
 
 # Define the test cases to generate and use.
 test_cases:
@@ -48,7 +89,7 @@ test_cases:
           ref: C
           alt: A
         GRCh38:
-          chrom: MT
+          chrom: chrM
           pos: 11777
           ref: C
           alt: A
@@ -76,7 +117,7 @@ test_cases:
           ref: T
           alt: C
         GRCh38:
-          chrom: "13"
+          chrom: "chr13"
           pos: 94576404
           ref: T
           alt: C
@@ -90,7 +131,7 @@ test_cases:
           ref: A
           alt: C
         GRCh38:
-          chrom: "13"
+          chrom: "chr13"
           pos: 94590872
           ref: A
           alt: C
@@ -118,7 +159,7 @@ test_cases:
           ref: A
           alt: G
         GRCh38:
-          chrom: "13"
+          chrom: "chr13"
           pos: 94578130
           ref: A
           alt: G
@@ -146,7 +187,7 @@ test_cases:
           ref: A
           alt: G
         GRCh38:
-          chrom: "16"
+          chrom: "chr16"
           pos: 1455760
           ref: A
           alt: G
@@ -179,7 +220,7 @@ test_cases:
           ref: G
           alt: A
         GRCh38:
-          chrom: "12"
+          chrom: "chr12"
           pos: 106369351
           ref: G
           alt: A
@@ -195,7 +236,7 @@ test_cases:
           ref: G
           alt: A
         GRCh38:
-          chrom: "12"
+          chrom: "chr12"
           pos: 106369587
           ref: G
           alt: A
@@ -228,7 +269,7 @@ test_cases:
           ref: C
           alt: G
         GRCh38:
-          chrom: "4"
+          chrom: "chr4"
           pos: 174508793
           ref: C
           alt: G
@@ -261,7 +302,7 @@ test_cases:
           ref: A
           alt: G
         GRCh38:
-          chrom: "16"
+          chrom: "chr16"
           pos: 1455760
           ref: A
           alt: G
@@ -295,7 +336,7 @@ test_cases:
           ref: A
           alt: G
         GRCh38:
-          chrom: "16"
+          chrom: "chr16"
           pos: 1455760
           ref: A
           alt: G

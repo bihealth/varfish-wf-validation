@@ -298,6 +298,7 @@ rule upload_to_varfish:
             --no-verify-ssl \
             case \
             create-import-info \
+            --genomebuild {wildcards.release} \
             --force-fresh \
             --resubmit \
             {project_uuid} \
@@ -350,7 +351,7 @@ def load_case_uuid(path_case_list, case_name):
         for case in json.load(inputf):
             if case["name"] == case_name:
                 return case["sodar_uuid"]  # early exit!
-    raise RuntimeError(f"Could not resolve {case[name]} to UUID!")
+    raise RuntimeError(f"Could not resolve {case_name} to UUID!")
 
 
 rule create_query_params:
@@ -428,7 +429,7 @@ rule wait_for_query:
 
         while true; do
             varfish-cli \
-                --config=/tmp/varfishrc.toml \
+                --config={tmpdir}/varfishrc.toml \
                 --no-verify-ssl \
                 case \
                 --output-format=json \
@@ -467,7 +468,7 @@ rule fetch_results_json:
         query_id=$(jq -r '.sodar_uuid' {input.query})
 
         varfish-cli \
-            --config=/tmp/varfishrc.toml \
+            --config={tmpdir}/varfishrc.toml \
             --no-verify-ssl \
             case \
             --output-format=json \
@@ -572,8 +573,7 @@ rule check_result_json:
 rule all_results:
     input:
         statuses=expand(
-            "validation/{release}/{name}/status.txt",
-            release=config["releases"],
+            "validation/{{release}}/{name}/status.txt",
             name=TEST_CASES,
         ),
     output:
