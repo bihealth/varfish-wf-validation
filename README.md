@@ -35,5 +35,5 @@ Future versions will allow you to wait automatically.
 Then, kickoff the querying and validation.
 
 ```
-workflow # snakemake --cores=10 -p validation/GRCh37/.done
+workflow # snakemake --cores=10 -p validation/GRCh37/all_statuses.txt
 ```
