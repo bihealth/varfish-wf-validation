@@ -340,3 +340,100 @@ test_cases:
           pos: 1455760
           ref: A
           alt: G
+  # Example 1 used in Innsbruck talk in April 2022
+  - name: example_at_1
+    input_case: HG00126-N1-DNA1-WES1
+    map:
+      family: fam_at_1
+      HG00126-N1-DNA1-WES1: fam_at_1_index
+    affected:
+      fam_at_1_index: true
+    query:
+      presets: de_novo
+    spike_ins:
+      # A V-pathogenic variant
+      - label: "NM_031263.4(HNRNPK):c.931_932insTT p.(Pro311fs)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/221225/
+        genotypes:
+          fam_at_1_index: "0/1"
+        GRCh37:
+          chrom: "9"
+          pos: 86586818
+          ref: G
+          alt: GAA
+        GRCh38:
+          chrom: "chr9"
+          pos: 83971903
+          ref: G
+          alt: GAA
+      # A III-variant of unknown significance
+      - label: "NM_000052.7(ATP7A):c.1172G>C p.(Cys391Ser)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1437055/
+        genotypes:
+          fam_at_1_index: "1/1"
+        GRCh37:
+          chrom: "X"
+          pos: 77245290
+          ref: G
+          alt: C
+        GRCh38:
+          chrom: "X"
+          pos: 77989794
+          ref: G
+          alt: C
+  # Example 2 used in Innsbruck talk in April 2022
+  - name: example_at_2
+    input_case: HG00121-N1-DNA1-WES1
+    map:
+      family: fam_at_2
+      HG00121-N1-DNA1-WES1: fam_at_2_index
+    affected:
+      fam_at_1_index: true
+    query:
+      presets: de_novo
+    spike_ins:
+      # First V-pathogenic variant
+      - label: "NM_007194.4(CHEK2):c.444+1G>T"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/121914/
+        genotypes:
+          fam_at_2_index: "0/1"
+        GRCh37:
+          chrom: "22"
+          pos: 29121230
+          ref: C
+          alt: A
+        GRCh38:
+          chrom: "22"
+          pos: 28725242
+          ref: C
+          alt: A
+      # Second V-pathogenic variant
+      - label: "NM_016648.4(LARP7):c.834dup (p.Arg279fs)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/504211/
+        genotypes:
+          fam_at_2_index: "0/1"
+        GRCh37:
+          chrom: "4"
+          pos: 113568536
+          ref: G
+          alt: GA
+        GRCh38:
+          chrom: "4"
+          pos: 112147380
+          ref: G
+          alt: GA
+      # Third V-pathogenic variant
+      - label: "NM_016648.4(LARP7):c.64_65del (p.Glu22fs)"
+        url: https://www.ncbi.nlm.nih.gov/clinvar/variation/1308663/
+        genotypes:
+          fam_at_2_index: "0/1"
+        GRCh37:
+          chrom: "4"
+          pos: 113565887
+          ref: AAG
+          alt: A
+        GRCh38:
+          chrom: "4"
+          pos: 112144731
+          ref: AAG
+          alt: A
